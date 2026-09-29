@@ -1,7 +1,10 @@
 const video = document.getElementById("video");
+const canvas = document.getElementById("canvas");
 const startButton = document.getElementById("startButton");
 const clearButton = document.getElementById("clearButton");
 const status = document.getElementById("status");
+
+const ctx = canvas.getContext("2d");
 
 let cameraStream = null;
 
@@ -22,18 +25,61 @@ hands.setOptions({
 
 // Receive MediaPipe results
 hands.onResults((results) => {
-    console.log("MediaPipe results:", results);
+    // Match canvas resolution to the camera video
+    if (
+        video.videoWidth > 0 &&
+        video.videoHeight > 0 &&
+        (canvas.width !== video.videoWidth ||
+            canvas.height !== video.videoHeight)
+    ) {
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+    }
 
-    if (results.multiHandLandmarks &&
-        results.multiHandLandmarks.length > 0) {
+    // Clear previous frame
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+    // Check if hands were detected
+    if (
+        results.multiHandLandmarks &&
+        results.multiHandLandmarks.length > 0
+    ) {
         status.textContent =
             `Hand detected: ${results.multiHandLandmarks.length}`;
+
+        // Draw every detected hand
+        for (const landmarks of results.multiHandLandmarks) {
+
+            // Draw connections between landmarks
+            drawConnectors(
+                ctx,
+                landmarks,
+                HAND_CONNECTIONS,
+                {
+                    color: "#00e5ff",
+                    lineWidth: 3
+                }
+            );
+
+            // Draw the 21 landmarks
+            drawLandmarks(
+                ctx,
+                landmarks,
+                {
+                    color: "#ffffff",
+                    fillColor: "#00e5ff",
+                    lineWidth: 1,
+                    radius: 5
+                }
+            );
+        }
+
     } else {
         status.textContent = "Camera running — no hand detected.";
     }
 });
 
+// Start camera
 startButton.addEventListener("click", async () => {
     try {
         status.textContent = "Requesting camera access...";
@@ -61,6 +107,7 @@ startButton.addEventListener("click", async () => {
     }
 });
 
+// Send camera frames to MediaPipe
 async function processCameraFrames() {
     if (video.readyState >= 2) {
         await hands.send({
@@ -71,6 +118,9 @@ async function processCameraFrames() {
     requestAnimationFrame(processCameraFrames);
 }
 
+// Clear button
 clearButton.addEventListener("click", () => {
-    status.textContent = "Clear button clicked.";
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    status.textContent = "Canvas cleared.";
 });
