@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>AirDraw — Hand Tracking & Air Gesture Drawing</title>
+
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <main class="app">
+        <h1>AirDraw</h1>
+
+        <p>
+            Real-time hand tracking and air-gesture drawing in your browser.
+        </p>
+
+        <div class="camera-container">
+            <video id="video" autoplay playsinline></video>
+            <canvas id="canvas"></canvas>
+        </div>
+
+        <div class="controls">
+            <button id="startButton">Start Camera</button>
+            <button id="clearButton">Clear</button>
+        </div>
+
+        <p id="status">Camera not started.</p>
+    </main>
+
+    <script src="script.js"></script>
+</body>
+</html>

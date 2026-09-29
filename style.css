@@ -1,0 +1,111 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    min-height: 100vh;
+    font-family: Arial, sans-serif;
+    background: #080b12;
+    color: #ffffff;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    padding: 30px;
+}
+
+.app {
+    width: 100%;
+    max-width: 1000px;
+    text-align: center;
+}
+
+h1 {
+    font-size: 3rem;
+    margin-bottom: 10px;
+}
+
+.app > p {
+    color: #9ca3af;
+    margin-bottom: 25px;
+}
+
+.camera-container {
+    position: relative;
+    width: 100%;
+    max-width: 900px;
+    aspect-ratio: 16 / 9;
+
+    margin: 0 auto 25px;
+
+    background: #111827;
+    border: 1px solid #273244;
+    border-radius: 16px;
+
+    overflow: hidden;
+}
+
+#video,
+#canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+
+    width: 100%;
+    height: 100%;
+}
+
+#video {
+    object-fit: cover;
+}
+
+#canvas {
+    pointer-events: none;
+}
+
+.controls {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+
+    margin-bottom: 20px;
+}
+
+button {
+    border: none;
+    border-radius: 10px;
+
+    padding: 12px 22px;
+
+    font-size: 15px;
+    font-weight: 600;
+
+    cursor: pointer;
+
+    background: #2563eb;
+    color: white;
+
+    transition: transform 0.2s ease,
+                opacity 0.2s ease;
+}
+
+button:hover {
+    transform: translateY(-2px);
+    opacity: 0.9;
+}
+
+button:active {
+    transform: translateY(0);
+}
+
+#clearButton {
+    background: #374151;
+}
+
+#status {
+    color: #6b7280;
+    font-size: 14px;
+}
