@@ -5,10 +5,15 @@ const startButton = document.getElementById("startButton");
 const clearButton = document.getElementById("clearButton");
 const status = document.getElementById("status");
 const pinchStatus = document.getElementById("pinchStatus");
+const fingerPosition = document.getElementById("fingerPosition");
 
 const ctx = canvas.getContext("2d");
 
 let cameraStream = null;
+
+// Previous fingertip position while drawing
+let previousX = null;
+let previousY = null;
 
 
 // -----------------------------------------
@@ -51,6 +56,88 @@ function calculateDistance(point1, point2) {
 
 
 // -----------------------------------------
+// Draw fingertip cursor
+// -----------------------------------------
+
+function drawFingertip(x, y) {
+
+    ctx.save();
+
+    ctx.shadowColor = "#00e5ff";
+    ctx.shadowBlur = 20;
+
+    ctx.beginPath();
+
+    ctx.arc(
+        x,
+        y,
+        9,
+        0,
+        Math.PI * 2
+    );
+
+    ctx.fillStyle = "#00e5ff";
+    ctx.fill();
+
+    ctx.shadowBlur = 0;
+
+    ctx.beginPath();
+
+    ctx.arc(
+        x,
+        y,
+        4,
+        0,
+        Math.PI * 2
+    );
+
+    ctx.fillStyle = "#ffffff";
+    ctx.fill();
+
+    ctx.restore();
+}
+
+
+// -----------------------------------------
+// Draw writing line
+// -----------------------------------------
+
+function drawWritingLine(
+    startX,
+    startY,
+    endX,
+    endY
+) {
+
+    ctx.save();
+
+    ctx.strokeStyle = "#ffffff";
+    ctx.lineWidth = 5;
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+
+    ctx.shadowColor = "#00e5ff";
+    ctx.shadowBlur = 15;
+
+    ctx.beginPath();
+
+    ctx.moveTo(
+        startX,
+        startY
+    );
+
+    ctx.lineTo(
+        endX,
+        endY
+    );
+
+    ctx.stroke();
+
+    ctx.restore();
+}
+
+
+// -----------------------------------------
 // Receive MediaPipe results
 // -----------------------------------------
 
@@ -89,55 +176,102 @@ hands.onResults((results) => {
             `Hand detected: ${results.multiHandLandmarks.length}`;
 
 
-        // Draw every detected hand
-        for (const landmarks of results.multiHandLandmarks) {
+        // Use the first detected hand for writing
+        const landmarks =
+            results.multiHandLandmarks[0];
 
 
-            // -----------------------------------------
-            // Thumb + index finger distance
-            // -----------------------------------------
+        // -----------------------------------------
+        // Index fingertip
+        // -----------------------------------------
 
-            // Landmark 4 = thumb tip
-            // Landmark 8 = index fingertip
+        const indexTip = landmarks[8];
 
-            const thumbTip = landmarks[4];
-            const indexTip = landmarks[8];
+        const indexX =
+            indexTip.x * canvas.width;
 
-            const pinchDistance = calculateDistance(
+        const indexY =
+            indexTip.y * canvas.height;
+
+
+        fingerPosition.textContent =
+            `Index: X ${indexTip.x.toFixed(3)} | Y ${indexTip.y.toFixed(3)}`;
+
+
+        // -----------------------------------------
+        // Pinch detection
+        // -----------------------------------------
+
+        const thumbTip = landmarks[4];
+
+        const pinchDistance =
+            calculateDistance(
                 thumbTip,
                 indexTip
             );
 
 
-            // Pinch threshold
-            const pinchThreshold = 0.06;
+        const pinchThreshold = 0.06;
 
-            // Determine whether the user is pinching
-            const isPinching =
-                pinchDistance < pinchThreshold;
+        const isPinching =
+            pinchDistance < pinchThreshold;
 
 
-            // -----------------------------------------
-            // Pinch status
-            // -----------------------------------------
+        // -----------------------------------------
+        // Pinch status
+        // -----------------------------------------
 
-            if (isPinching) {
+        if (isPinching) {
 
-                console.log("PINCH DETECTED");
+            pinchStatus.textContent =
+                `Pinch: ON (${pinchDistance.toFixed(3)})`;
 
-                pinchStatus.textContent =
-                    `Pinch: ON (${pinchDistance.toFixed(3)})`;
+        } else {
 
-            } else {
+            pinchStatus.textContent =
+                `Pinch: OFF (${pinchDistance.toFixed(3)})`;
+        }
 
-                pinchStatus.textContent =
-                    `Pinch: OFF (${pinchDistance.toFixed(3)})`;
+
+        // -----------------------------------------
+        // Air writing
+        // -----------------------------------------
+
+        if (isPinching) {
+
+            // If this is the first drawing point,
+            // don't draw a line yet.
+            if (
+                previousX !== null &&
+                previousY !== null
+            ) {
+
+                drawWritingLine(
+                    previousX,
+                    previousY,
+                    indexX,
+                    indexY
+                );
             }
 
 
-            // -----------------------------------------
-            // Glowing hand connections
-            // -----------------------------------------
+            // Save current position
+            previousX = indexX;
+            previousY = indexY;
+
+        } else {
+
+            // Stop the current drawing path
+            previousX = null;
+            previousY = null;
+        }
+
+
+        // -----------------------------------------
+        // Draw hand connections
+        // -----------------------------------------
+
+        for (const handLandmarks of results.multiHandLandmarks) {
 
             ctx.save();
 
@@ -146,7 +280,7 @@ hands.onResults((results) => {
 
             drawConnectors(
                 ctx,
-                landmarks,
+                handLandmarks,
                 HAND_CONNECTIONS,
                 {
                     color: "#00e5ff",
@@ -158,7 +292,7 @@ hands.onResults((results) => {
 
 
             // -----------------------------------------
-            // Glowing hand landmarks
+            // Draw hand landmarks
             // -----------------------------------------
 
             ctx.save();
@@ -168,7 +302,7 @@ hands.onResults((results) => {
 
             drawLandmarks(
                 ctx,
-                landmarks,
+                handLandmarks,
                 {
                     color: "#ffffff",
                     fillColor: "#00e5ff",
@@ -180,6 +314,16 @@ hands.onResults((results) => {
             ctx.restore();
         }
 
+
+        // -----------------------------------------
+        // Draw fingertip cursor
+        // -----------------------------------------
+
+        drawFingertip(
+            indexX,
+            indexY
+        );
+
     } else {
 
         status.textContent =
@@ -187,6 +331,13 @@ hands.onResults((results) => {
 
         pinchStatus.textContent =
             "Pinch: OFF";
+
+        fingerPosition.textContent =
+            "Index: X 0.000 | Y 0.000";
+
+        // Reset drawing path
+        previousX = null;
+        previousY = null;
     }
 });
 
@@ -224,7 +375,6 @@ startButton.addEventListener("click", async () => {
         startButton.disabled = true;
 
 
-        // Start sending camera frames to MediaPipe
         processCameraFrames();
 
     } catch (error) {
@@ -273,10 +423,15 @@ clearButton.addEventListener("click", () => {
         canvas.height
     );
 
+    previousX = null;
+    previousY = null;
 
     status.textContent =
         "Canvas cleared.";
 
     pinchStatus.textContent =
         "Pinch: OFF";
+
+    fingerPosition.textContent =
+        "Index: X 0.000 | Y 0.000";
 });
