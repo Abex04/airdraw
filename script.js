@@ -1,3 +1,4 @@
+
 const video = document.getElementById("video");
 const canvas = document.getElementById("canvas");
 const startButton = document.getElementById("startButton");
@@ -25,32 +26,49 @@ hands.setOptions({
 
 // Receive MediaPipe results
 hands.onResults((results) => {
+
     // Match canvas resolution to the camera video
     if (
         video.videoWidth > 0 &&
         video.videoHeight > 0 &&
-        (canvas.width !== video.videoWidth ||
-            canvas.height !== video.videoHeight)
+        (
+            canvas.width !== video.videoWidth ||
+            canvas.height !== video.videoHeight
+        )
     ) {
         canvas.width = video.videoWidth;
         canvas.height = video.videoHeight;
     }
 
     // Clear previous frame
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.clearRect(
+        0,
+        0,
+        canvas.width,
+        canvas.height
+    );
 
-    // Check if hands were detected
+    // Check if a hand was detected
     if (
         results.multiHandLandmarks &&
         results.multiHandLandmarks.length > 0
     ) {
+
         status.textContent =
             `Hand detected: ${results.multiHandLandmarks.length}`;
 
-        // Draw every detected hand
+        // Draw each detected hand
         for (const landmarks of results.multiHandLandmarks) {
 
-            // Draw connections between landmarks
+            // -----------------------------
+            // Hand connections
+            // -----------------------------
+
+            ctx.save();
+
+            ctx.shadowColor = "#00e5ff";
+            ctx.shadowBlur = 10;
+
             drawConnectors(
                 ctx,
                 landmarks,
@@ -61,7 +79,18 @@ hands.onResults((results) => {
                 }
             );
 
-            // Draw the 21 landmarks
+            ctx.restore();
+
+
+            // -----------------------------
+            // Hand landmarks
+            // -----------------------------
+
+            ctx.save();
+
+            ctx.shadowColor = "#00e5ff";
+            ctx.shadowBlur = 10;
+
             drawLandmarks(
                 ctx,
                 landmarks,
@@ -72,34 +101,47 @@ hands.onResults((results) => {
                     radius: 5
                 }
             );
+
+            ctx.restore();
         }
 
     } else {
-        status.textContent = "Camera running — no hand detected.";
+
+        status.textContent =
+            "Camera running — no hand detected.";
     }
 });
 
+
 // Start camera
 startButton.addEventListener("click", async () => {
-    try {
-        status.textContent = "Requesting camera access...";
 
-        cameraStream = await navigator.mediaDevices.getUserMedia({
-            video: true,
-            audio: false
-        });
+    try {
+
+        status.textContent =
+            "Requesting camera access...";
+
+        cameraStream =
+            await navigator.mediaDevices.getUserMedia({
+                video: true,
+                audio: false
+            });
 
         video.srcObject = cameraStream;
 
-        status.textContent = "Camera is running.";
+        status.textContent =
+            "Camera is running.";
 
-        startButton.textContent = "Camera Running";
+        startButton.textContent =
+            "Camera Running";
+
         startButton.disabled = true;
 
         // Start sending camera frames to MediaPipe
         processCameraFrames();
 
     } catch (error) {
+
         console.error("Camera error:", error);
 
         status.textContent =
@@ -107,9 +149,12 @@ startButton.addEventListener("click", async () => {
     }
 });
 
+
 // Send camera frames to MediaPipe
 async function processCameraFrames() {
+
     if (video.readyState >= 2) {
+
         await hands.send({
             image: video
         });
@@ -118,9 +163,17 @@ async function processCameraFrames() {
     requestAnimationFrame(processCameraFrames);
 }
 
+
 // Clear button
 clearButton.addEventListener("click", () => {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    status.textContent = "Canvas cleared.";
+    ctx.clearRect(
+        0,
+        0,
+        canvas.width,
+        canvas.height
+    );
+
+    status.textContent =
+        "Canvas cleared.";
 });
